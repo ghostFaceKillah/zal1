@@ -1,5 +1,8 @@
 program connect6;
 
+uses
+  sysUtils;
+
 const 
   N = 's';
   M = 'S';
@@ -166,6 +169,53 @@ procedure vertical_indices (var i, j:char; var finished, new_line:boolean);
     end;
   end;
 
+procedure ne_diagonal_indices (var i, j:char; var finished, new_line:boolean);
+  var 
+    temp : char;
+  begin
+    finished := false;
+    if (i = 'z') and (j = 'z') then begin
+      i := 'a'; 
+      j := 'A';
+      new_line := true;
+    end else begin
+      if ( i = 's') and ( j = 'S') then 
+        finished := true 
+      else begin
+        dec(i);
+        inc(j);
+        if (i < 'a') and (j > 'S') then begin
+          new_line := true;
+          i := 's';
+          j := 'B';
+        end
+        else if i < 'a' then begin
+          new_line := true;
+          inc(i);
+          dec(j);
+          temp := i;
+          i := j;
+          j := temp;
+          i := lowerCase(i);    // need to write custom lowerCase
+          i := inc(i);                    
+          j := upperCase(j);
+        end else if j > 'S' then begin
+          new_line := true;
+          inc(i);
+          dec(j);
+          temp := i;
+          i := j;
+          j := temp;
+          i := lowerCase(i);
+          j := upperCase(j);
+          j := inc(j);
+        end else 
+          new_line := false;
+      end;
+    end;    
+  end;
+
+
 function new_game_state(plansza:table):state;
  // podejscie naiwne - wykonujemy tylko 4* 19^2 =~ 1600 operacji, więc dla
  // komputera nie jest to dużo
@@ -181,13 +231,14 @@ function new_game_state(plansza:table):state;
     resu_state := playing;
     finished := false;
     k := 1;
-    while (k <= 2) and (resu_state = playing) do begin
+    while (k <= 3) and (resu_state = playing) do begin
       i := 'z';
       j := 'z';  // this means we want to get beginning indices
       new_line := true;
       case k of
         1 : horizontal_indices(i,j,finished, new_line);
         2 : vertical_indices(i,j,finished, new_line);
+        3 : ne_diagonal_indices (i, j, finished, new_line);
       end;
       while (resu_state = playing) and not(finished) do begin
         if new_line then begin
@@ -208,6 +259,7 @@ function new_game_state(plansza:table):state;
         case k of
           1 : horizontal_indices(i,j,finished, new_line);
           2 : vertical_indices(i,j,finished, new_line);
+          3 : ne_diagonal_indices (i, j, finished, new_line);
         end;
       end;
       inc(k);
