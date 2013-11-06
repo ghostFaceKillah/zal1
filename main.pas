@@ -62,17 +62,14 @@ procedure showTable(plansza:table; now_playing:player; game_state:state);
   begin
     for k := 1 to 38 do write('-');
     writeln('+');
- 
     for i := N downto 'a' do begin 
       write(i, plansza[i,'A']);
       for j := 'B' to M do
         write(' ', plansza[i,j]);
       writeln('|')
     end;
-
     for j := 'A' to M do write(' ',j);
     writeln('|');
-
     if game_state = just_started then
       writeln('gracz X') 
     else if game_state = playing then
@@ -152,6 +149,6 @@ begin
         switch_player(now_playing);
       end
     end;
-      showTable(plansza, now_playing, game_state);   // should also present game state gracz X or etc
+      showTable(plansza, now_playing, game_state);
   end;
 end.
