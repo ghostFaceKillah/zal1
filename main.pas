@@ -134,7 +134,7 @@ begin
   now_playing := X;
   showTable(plansza, now_playing, game_state);
 
-  // state = ( playing, x_wins, y_wins , just_started,  just_end, draw);
+  ///// state = ( playing, x_wins, y_wins , just_started,  just_end, draw); 
 
   while (game_state = playing) or (game_state = just_started ) do begin
     readln(napis);
