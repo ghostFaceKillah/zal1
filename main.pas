@@ -10,6 +10,7 @@ const
 type
   state = ( playing, x_wins, o_wins , just_started,  just_end, draw);
   input_status = (good,start,bad,empty);
+  direction = (nwse, nesw, horizontal, vertical);
   table = array['a'..N,'A'..M] of char;
   player = (X,O);
 
@@ -58,7 +59,7 @@ procedure init_table(var plansza:table);
         plansza[i,j] := '.';
   end;
 
-procedure showTable(plansza:table; now_playing:player; game_state:state);
+procedure show_table(plansza:table; now_playing:player; game_state:state);
   var
     i,j:char;
     k:integer;
@@ -169,7 +170,7 @@ procedure vertical_indices (var i, j:char; var finished, new_line:boolean);
     end;
   end;
 
-procedure ne_diagonal_indices (var i, j:char; var finished, new_line:boolean);
+procedure nw_diagonal_indices (var i, j:char; var finished, new_line:boolean);
   begin
     if (i = 'z') and (j = 'z') then begin
       new_line := true;
@@ -186,11 +187,13 @@ procedure ne_diagonal_indices (var i, j:char; var finished, new_line:boolean);
         else begin
           finished := false;
           new_line := true;
-          if (ord(i) + ord(j)) >= (ord('s') + ord('A')) then begin // we are on the upside of diagonal
+          if (ord(i) + ord(j)) >= (ord('s') + ord('A')) then begin 
+            // we are on the upside of diagonal
             j := chr( ord(i) + 2 - ord('a') + ord('A') );
             i := 's';
           end
-          else begin  // we are on the downside of the diagonal
+          else begin 
+            // we are on the downside of the diagonal
             i := chr( ord(i) + ord(j)  + 1 - ord('A') );
             j := 'A';
           end;
@@ -203,7 +206,56 @@ procedure ne_diagonal_indices (var i, j:char; var finished, new_line:boolean);
     end;
   end;
 
-function new_game_state(plansza:table):state;
+procedure ne_diagonal_indices (var i, j:char; var finished, new_line:boolean);
+  begin
+    if (i = 'z') and (j = 'z') then begin
+      new_line := true;
+      finished := false;
+      i := 's';    
+      j := 'A';
+    end 
+    else begin
+      dec(i);
+      dec(j);
+      if (i < 'a') or (j < 'A') then begin
+        if (ord(i) - ord(j) - 1) <= ( ord('a') - ord('S') + 2  ) then
+          finished := true
+        else begin
+          finished := false;
+          new_line := true;
+          if (ord(i) - ord(j)) > (ord('a') - ord('A')) then begin 
+            // upside of the diagonal
+            j := chr(ord('A') +  ord('s') - ord(i) )  ;
+            i := 's';
+          end
+          else begin 
+            i := chr( ord('s') - 2 -  ord(j) + ord('A'));
+            j := 'S';
+            // we are on the downside of the diagonal
+          end;
+        end;
+      end
+      else begin
+        new_line := false;
+        finished := false;
+      end;
+    end;
+  end;
+
+procedure get_next_index (iter_func_num:direction;
+                          var i, j:char; var finished, new_line:boolean);
+  begin
+    case iter_func_num of
+    nwse : nw_diagonal_indices (i, j, finished, new_line);
+    nesw : ne_diagonal_indices (i, j, finished, new_line);
+    vertical : vertical_indices(i,j,finished, new_line);
+    horizontal : horizontal_indices(i,j,finished, new_line);
+    end;
+  end;
+
+
+
+function did_someone_win(plansza:table):state;
  // podejscie naiwne - wykonujemy tylko 4* 19^2 =~ 1600 operacji, więc dla
  // komputera nie jest to dużo
   var
@@ -213,20 +265,25 @@ function new_game_state(plansza:table):state;
     just_looked_at : char;
     new_line : boolean;
     counter : integer;
-    k : integer;
+    iter_func : direction;
   begin
     resu_state := playing;
     finished := false;
-    k := 1;
-    while (k <= 3) and (resu_state = playing) do begin
+    iter_func := nwse;
+    new_line := true;
+
+   //  writeln(ord(iter_func));
+   //  writeln(iter_func);
+   //  inc(iter_func);
+   //  writeln(ord(iter_func));
+   //  writeln(iter_func);
+
+
+
+    while (ord(iter_func) <= 3) and (resu_state = playing) do begin
       i := 'z';
       j := 'z';  // this means we want to get beginning indices
-      new_line := true;
-      case k of                        /// get first index of this indexing
-        1 : horizontal_indices(i,j,finished, new_line);
-        2 : vertical_indices(i,j,finished, new_line);
-        3 : ne_diagonal_indices (i, j, finished, new_line);
-      end;
+      get_next_index(iter_func, i, j, finished, new_line);
       while (resu_state = playing) and not(finished) do begin
         if new_line then begin
           just_looked_at := '.'; 
@@ -243,25 +300,36 @@ function new_game_state(plansza:table):state;
             resu_state := x_wins
           else if just_looked_at = 'O' then
             resu_state := o_wins;
-        case k of  // get next index of this iteration style
-          1 : horizontal_indices(i,j,finished, new_line);
-          2 : vertical_indices(i,j,finished, new_line);
-          3 : ne_diagonal_indices (i, j, finished, new_line);
-        end;
+        get_next_index(iter_func, i, j, finished, new_line);
       end;
-      inc(k);
+      inc(iter_func);
     end;
-    new_game_state := resu_state;
+    did_someone_win := resu_state;
+  end;
+
+function is_draw(plansza:table):state;
+  var
+    i,j:char;
+    resu:state;
+  begin
+    resu := draw;
+    i := 'a';
+    while (i <= N) and (resu = draw) do begin
+      j := 'A';
+      while (j <= M) and (resu = draw) do begin
+        if plansza[i,j] = ',' then resu := playing;
+        inc(j);
+      end;
+      inc(i);
+    end;
+    is_draw := playing;
   end;
 
 begin 
-   
   init_table(plansza);
   game_state := just_started;
   now_playing := X;
-  showTable(plansza, now_playing, game_state);
-
-  // state = ( playing, x_wins, y_wins , just_started,  just_end, draw); 
+  show_table(plansza, now_playing, game_state);
 
   while (game_state = playing) or (game_state = just_started) do begin
     readln(napis);
@@ -272,10 +340,12 @@ begin
             ((input_is = good) and (game_state = playing)) then begin
       move_successful := make_move(input_is, now_playing, napis, plansza);
       if move_successful then begin
-        game_state := new_game_state(plansza);
         switch_player(now_playing);
+        game_state := did_someone_win(plansza);
+        if game_state = playing then 
+          game_state := is_draw(plansza);
       end
     end;
-      showTable(plansza, now_playing, game_state);
+      show_table(plansza, now_playing, game_state);
   end; 
 end.
