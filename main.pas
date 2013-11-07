@@ -170,51 +170,38 @@ procedure vertical_indices (var i, j:char; var finished, new_line:boolean);
   end;
 
 procedure ne_diagonal_indices (var i, j:char; var finished, new_line:boolean);
-  var 
-    temp : char;
   begin
-    finished := false;
     if (i = 'z') and (j = 'z') then begin
-      i := 'a'; 
-      j := 'A';
       new_line := true;
-    end else begin
-      if ( i = 's') and ( j = 'S') then 
-        finished := true 
+      finished := false;
+      i := 'f';    
+      j := 'A';
+    end 
+    else begin
+      dec(i);
+      inc(j);
+      if (i < 'a') or (j > 'S') then begin
+        if (ord(i) + ord(j) + 1) > ( ord('s') + ord('P')) then
+          finished := true
+        else begin
+          finished := false;
+          new_line := true;
+          if (ord(i) + ord(j)) >= (ord('s') + ord('A')) then begin // we are on the upside of diagonal
+            j := chr( ord(i) + 2 - ord('a') + ord('A') );
+            i := 's';
+          end
+          else begin  // we are on the downside of the diagonal
+            i := chr( ord(i) + ord(j)  + 1 - ord('A') );
+            j := 'A';
+          end;
+        end;
+      end
       else begin
-        dec(i);
-        inc(j);
-        if (i < 'a') and (j > 'S') then begin
-          new_line := true;
-          i := 's';
-          j := 'B';
-        end
-        else if i < 'a' then begin
-          new_line := true;
-          inc(i);
-          dec(j);
-          temp := i;
-          i := j;
-          j := temp;
-          i := lowerCase(i);    // need to write custom lowerCase
-          i := inc(i);                    
-          j := upperCase(j);
-        end else if j > 'S' then begin
-          new_line := true;
-          inc(i);
-          dec(j);
-          temp := i;
-          i := j;
-          j := temp;
-          i := lowerCase(i);
-          j := upperCase(j);
-          j := inc(j);
-        end else 
-          new_line := false;
+        new_line := false;
+        finished := false;
       end;
-    end;    
+    end;
   end;
-
 
 function new_game_state(plansza:table):state;
  // podejscie naiwne - wykonujemy tylko 4* 19^2 =~ 1600 operacji, więc dla
@@ -235,7 +222,7 @@ function new_game_state(plansza:table):state;
       i := 'z';
       j := 'z';  // this means we want to get beginning indices
       new_line := true;
-      case k of
+      case k of                        /// get first index of this indexing
         1 : horizontal_indices(i,j,finished, new_line);
         2 : vertical_indices(i,j,finished, new_line);
         3 : ne_diagonal_indices (i, j, finished, new_line);
@@ -256,7 +243,7 @@ function new_game_state(plansza:table):state;
             resu_state := x_wins
           else if just_looked_at = 'O' then
             resu_state := o_wins;
-        case k of
+        case k of  // get next index of this iteration style
           1 : horizontal_indices(i,j,finished, new_line);
           2 : vertical_indices(i,j,finished, new_line);
           3 : ne_diagonal_indices (i, j, finished, new_line);
