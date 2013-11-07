@@ -5,7 +5,7 @@ const
   M = 'S';
 
 type
-  state = ( playing, x_wins, o_wins , just_started,  just_end, draw);
+  state = (playing, x_wins, o_wins , just_started, just_end, draw);
   input_status = (good,start,bad,empty);
   direction = (nwse, nesw, horizontal, vertical, ending);
   table = array['a'..N,'A'..M] of char;
@@ -90,7 +90,8 @@ procedure switch_player(var now_playing:player);
     if now_playing = X then now_playing := O else now_playing := X;
   end;
 
-procedure insertValue(i:integer; input_string:string; now_playing:player; var game_table:table);
+procedure insertValue(i:integer; input_string:string; now_playing:player; 
+                      var game_table:table);
   begin
     if now_playing = X then
       game_table[input_string[i+1], input_string[i]] := 'X'
@@ -316,7 +317,8 @@ function is_draw(game_table:table):state;
     while (i <= N) and (resu = draw) do begin
       j := 'A';
       while (j <= M) and (resu = draw) do begin
-        if game_table[i,j] = ',' then resu := playing;
+        if game_table[i,j] = ',' then 
+          resu := playing;
         inc(j);
       end;
       inc(i);
