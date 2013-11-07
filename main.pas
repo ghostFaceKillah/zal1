@@ -1,8 +1,5 @@
 program connect6;
 
-uses
-  sysUtils;
-
 const 
   N = 's';
   M = 'S';
@@ -10,56 +7,56 @@ const
 type
   state = ( playing, x_wins, o_wins , just_started,  just_end, draw);
   input_status = (good,start,bad,empty);
-  direction = (nwse, nesw, horizontal, vertical);
+  direction = (nwse, nesw, horizontal, vertical, ending);
   table = array['a'..N,'A'..M] of char;
   player = (X,O);
 
 var
-  napis : string;
-  plansza : table;
+  input_string : string;
+  game_table : table;
   game_state : state;
   input_is : input_status;
   now_playing : player;
   move_successful : boolean;
    
-function is_valid(const napis:string; is_start:boolean):boolean; 
+function is_valid(const input_string:string; is_start:boolean):boolean; 
   var
     resu:boolean;
   begin
     resu := true;
-    if (napis[1]>'S') or
-       (napis[1]<'A') or
-       (napis[2]>'s') or
-       (napis[2]<'a') then resu := false;
-    if not(is_start) and resu then if (napis[3]>'S') or
-                                      (napis[3]<'A') or
-                                      (napis[4]>'s') or
-                                      (napis[4]<'a') then resu := false;
+    if (input_string[1]>'S') or
+       (input_string[1]<'A') or
+       (input_string[2]>'s') or
+       (input_string[2]<'a') then resu := false;
+    if not(is_start) and resu then if (input_string[3]>'S') or
+                                      (input_string[3]<'A') or
+                                      (input_string[4]>'s') or
+                                      (input_string[4]<'a') then resu := false;
     is_valid := resu;
   end;                  
 
-function input_analyser(const napis:string):input_status;
+function input_analyser(const input_string:string):input_status;
   begin
-    if length(napis) = 0 then 
+    if length(input_string) = 0 then 
       input_analyser := empty
-    else if (length(napis) = 4) and is_valid(napis, false) then
+    else if (length(input_string) = 4) and is_valid(input_string, false) then
       input_analyser := good
-    else if (length(napis) = 2) and is_valid(napis, true) then
+    else if (length(input_string) = 2) and is_valid(input_string, true) then
       input_analyser := start
     else 
       input_analyser := bad;
   end;
 
-procedure init_table(var plansza:table);
+procedure init_table(var game_table:table);
   var
     i,j:char;
   begin
     for i := 'a' to N do
       for j := 'A' to M do
-        plansza[i,j] := '.';
+        game_table[i,j] := '.';
   end;
 
-procedure show_table(plansza:table; now_playing:player; game_state:state);
+procedure show_table(game_table:table; now_playing:player; game_state:state);
   var
     i,j:char;
     k:integer;
@@ -67,9 +64,9 @@ procedure show_table(plansza:table; now_playing:player; game_state:state);
     for k := 1 to 38 do write('-');
     writeln('+');
     for i := N downto 'a' do begin 
-      write(i, plansza[i,'A']);
+      write(i, game_table[i,'A']);
       for j := 'B' to M do
-        write(' ', plansza[i,j]);
+        write(' ', game_table[i,j]);
       writeln('|')
     end;
     for j := 'A' to M do write(' ',j);
@@ -81,7 +78,7 @@ procedure show_table(plansza:table; now_playing:player; game_state:state);
     else if game_state = draw then
       writeln('gracz ', now_playing)
     else if game_state = x_wins then
-      writeln('wygral x')
+      writeln('wygral X')
     else if game_state = o_wins then
       writeln('wygral O')
     else if game_state = draw then
@@ -93,31 +90,32 @@ procedure switch_player(var now_playing:player);
     if now_playing = X then now_playing := O else now_playing := X;
   end;
 
-procedure insertValue(i:integer; napis:string; now_playing:player; var plansza:table);
+procedure insertValue(i:integer; input_string:string; now_playing:player; var game_table:table);
   begin
     if now_playing = X then
-      plansza[napis[i+1], napis[i]] := 'X'
+      game_table[input_string[i+1], input_string[i]] := 'X'
     else
-      plansza[napis[i+1], napis[i]] := 'O'
+      game_table[input_string[i+1], input_string[i]] := 'O'
   end;
   
 function make_move(this_move_is:input_status; now_playing:player;
-                   napis:string; var plansza:table): boolean;
+                   input_string:string; var game_table:table): boolean;
+                   // WARNING : side effects in a func
   var
     resu : boolean;
   begin
     if this_move_is = start then begin
-      if  plansza[napis[2], napis[1]] = '.' then begin
-        insertValue(1, napis, now_playing, plansza);
+      if  game_table[input_string[2], input_string[1]] = '.' then begin
+        insertValue(1, input_string, now_playing, game_table);
         resu := true;
       end else resu := false;
     end
     else begin
-      if  (plansza[napis[2], napis[1]] = '.') and
-          (plansza[napis[4], napis[3]] = '.') and
-          ((napis[4] <> napis[2]) or (napis[1] <> napis[3])) then begin
-        insertValue(1, napis, now_playing, plansza);
-        insertValue(3, napis, now_playing, plansza);
+      if  (game_table[input_string[2], input_string[1]] = '.') and
+          (game_table[input_string[4], input_string[3]] = '.') and
+          ((input_string[4] <> input_string[2]) or (input_string[1] <> input_string[3])) then begin
+        insertValue(1, input_string, now_playing, game_table);
+        insertValue(3, input_string, now_playing, game_table);
         resu := true;
       end else resu := false;
     end;
@@ -253,11 +251,18 @@ procedure get_next_index (iter_func_num:direction;
     end;
   end;
 
+function next(current:direction) : direction;
+  begin
+    case current of
+      nwse : next := nesw;
+      nesw : next := vertical;
+      vertical : next := horizontal;
+      horizontal : next := ending;
+    end;
+  end;
 
-
-function did_someone_win(plansza:table):state;
- // podejscie naiwne - wykonujemy tylko 4* 19^2 =~ 1600 operacji, więc dla
- // komputera nie jest to dużo
+function did_someone_win(game_table:table):state;
+  // naiive approach as 4 directions * 19 rows * 19 cols =~ 1600 only lookups
   var
     i,j : char;
     resu_state : state;
@@ -271,16 +276,7 @@ function did_someone_win(plansza:table):state;
     finished := false;
     iter_func := nwse;
     new_line := true;
-
-   //  writeln(ord(iter_func));
-   //  writeln(iter_func);
-   //  inc(iter_func);
-   //  writeln(ord(iter_func));
-   //  writeln(iter_func);
-
-
-
-    while (ord(iter_func) <= 3) and (resu_state = playing) do begin
+    while (iter_func <> ending ) and (resu_state = playing) do begin
       i := 'z';
       j := 'z';  // this means we want to get beginning indices
       get_next_index(iter_func, i, j, finished, new_line);
@@ -289,12 +285,12 @@ function did_someone_win(plansza:table):state;
           just_looked_at := '.'; 
           counter := 1;
         end;
-        if plansza[i,j] = just_looked_at then begin
+        if game_table[i,j] = just_looked_at then begin
           inc(counter);
         end
         else 
           counter := 1;
-        just_looked_at := plansza[i,j];
+        just_looked_at := game_table[i,j];
         if counter >= 6 then 
           if just_looked_at = 'X' then
             resu_state := x_wins
@@ -302,12 +298,15 @@ function did_someone_win(plansza:table):state;
             resu_state := o_wins;
         get_next_index(iter_func, i, j, finished, new_line);
       end;
-      inc(iter_func);
+      iter_func := next(iter_func);
+      // standard inc is ok with normal compilation and 
+      // throws exceptions when using fpc -Ciort -vw -gl
+      // and _this_makes_me_a_sad_panda
     end;
     did_someone_win := resu_state;
   end;
 
-function is_draw(plansza:table):state;
+function is_draw(game_table:table):state;
   var
     i,j:char;
     resu:state;
@@ -317,7 +316,7 @@ function is_draw(plansza:table):state;
     while (i <= N) and (resu = draw) do begin
       j := 'A';
       while (j <= M) and (resu = draw) do begin
-        if plansza[i,j] = ',' then resu := playing;
+        if game_table[i,j] = ',' then resu := playing;
         inc(j);
       end;
       inc(i);
@@ -326,26 +325,27 @@ function is_draw(plansza:table):state;
   end;
 
 begin 
-  init_table(plansza);
+  init_table(game_table);
   game_state := just_started;
   now_playing := X;
-  show_table(plansza, now_playing, game_state);
+  show_table(game_table, now_playing, game_state);
 
   while (game_state = playing) or (game_state = just_started) do begin
-    readln(napis);
-    input_is := input_analyser(napis);
+    readln(input_string);
+    input_is := input_analyser(input_string);
     if input_is = empty then
       game_state := just_end
     else if ((input_is = start) and (game_state = just_started)) or
             ((input_is = good) and (game_state = playing)) then begin
-      move_successful := make_move(input_is, now_playing, napis, plansza);
+      move_successful := make_move(input_is, now_playing, input_string, game_table);
       if move_successful then begin
         switch_player(now_playing);
-        game_state := did_someone_win(plansza);
+        game_state := did_someone_win(game_table);
         if game_state = playing then 
-          game_state := is_draw(plansza);
+          game_state := is_draw(game_table);
       end
     end;
-      show_table(plansza, now_playing, game_state);
+      if not(game_state = just_end) then
+        show_table(game_table, now_playing, game_state);
   end; 
 end.
