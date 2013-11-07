@@ -6,7 +6,7 @@ const
 
 type
   state = (playing, x_wins, o_wins , just_started, just_end, draw);
-  input_status = (good,start,bad,empty);
+  input_status = (good, start, bad, empty);
   direction = (nwse, nesw, horizontal, vertical, ending);
   table = array['a'..N,'A'..M] of char;
   player = (X,O);
@@ -21,7 +21,7 @@ var
    
 function is_valid(const input_string:string; is_start:boolean):boolean; 
   var
-    resu:boolean;
+    resu : boolean;
   begin
     resu := true;
     if (input_string[1]>'S') or
@@ -49,7 +49,7 @@ function input_analyser(const input_string:string):input_status;
 
 procedure init_table(var game_table:table);
   var
-    i,j:char;
+    i,j : char;
   begin
     for i := 'a' to N do
       for j := 'A' to M do
@@ -58,8 +58,8 @@ procedure init_table(var game_table:table);
 
 procedure show_table(game_table:table; now_playing:player; game_state:state);
   var
-    i,j:char;
-    k:integer;
+    i,j : char;
+    k : integer;
   begin
     for k := 1 to 38 do write('-');
     writeln('+');
@@ -90,7 +90,7 @@ procedure switch_player(var now_playing:player);
     if now_playing = X then now_playing := O else now_playing := X;
   end;
 
-procedure insertValue(i:integer; input_string:string; now_playing:player; 
+procedure insert_value(i:integer; input_string:string; now_playing:player; 
                       var game_table:table);
   begin
     if now_playing = X then
@@ -107,23 +107,24 @@ function make_move(this_move_is:input_status; now_playing:player;
   begin
     if this_move_is = start then begin
       if  game_table[input_string[2], input_string[1]] = '.' then begin
-        insertValue(1, input_string, now_playing, game_table);
+        insert_value(1, input_string, now_playing, game_table);
         resu := true;
       end else resu := false;
     end
     else begin
       if  (game_table[input_string[2], input_string[1]] = '.') and
           (game_table[input_string[4], input_string[3]] = '.') and
-          ((input_string[4] <> input_string[2]) or (input_string[1] <> input_string[3])) then begin
-        insertValue(1, input_string, now_playing, game_table);
-        insertValue(3, input_string, now_playing, game_table);
+          ((input_string[4] <> input_string[2]) or
+            (input_string[1] <> input_string[3])) then begin
+        insert_value(1, input_string, now_playing, game_table);
+        insert_value(3, input_string, now_playing, game_table);
         resu := true;
       end else resu := false;
     end;
     make_move := resu;
   end;
 
-procedure horizontal_indices (var i, j:char; var finished, new_line:boolean);
+procedure horizontal_indices (var i,j:char; var finished, new_line:boolean);
   begin
     finished := false;
     if (i = 'z') and (j = 'z') then begin
@@ -217,7 +218,7 @@ procedure ne_diagonal_indices (var i, j:char; var finished, new_line:boolean);
       dec(i);
       dec(j);
       if (i < 'a') or (j < 'A') then begin
-        if (ord(i) - ord(j) - 1) <= ( ord('a') - ord('S') + 2  ) then
+        if (ord(i) - ord(j) - 1) <= (ord('a') - ord('S') + 2) then
           finished := true
         else begin
           finished := false;
@@ -277,7 +278,7 @@ function did_someone_win(game_table:table):state;
     finished := false;
     iter_func := nwse;
     new_line := true;
-    while (iter_func <> ending ) and (resu_state = playing) do begin
+    while (iter_func <> ending) and (resu_state = playing) do begin
       i := 'z';
       j := 'z';  // this means we want to get beginning indices
       get_next_index(iter_func, i, j, finished, new_line);
@@ -331,7 +332,6 @@ begin
   game_state := just_started;
   now_playing := X;
   show_table(game_table, now_playing, game_state);
-
   while (game_state = playing) or (game_state = just_started) do begin
     readln(input_string);
     input_is := input_analyser(input_string);
@@ -339,7 +339,8 @@ begin
       game_state := just_end
     else if ((input_is = start) and (game_state = just_started)) or
             ((input_is = good) and (game_state = playing)) then begin
-      move_successful := make_move(input_is, now_playing, input_string, game_table);
+      move_successful := make_move(input_is, now_playing, input_string,
+                                   game_table);
       if move_successful then begin
         switch_player(now_playing);
         game_state := did_someone_win(game_table);
