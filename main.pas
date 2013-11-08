@@ -19,7 +19,7 @@ var
   now_playing : player;
   move_successful : boolean;
    
-function is_valid(const input_string:string; is_start:boolean):boolean; 
+function is_in_range(const input_string:string; is_start:boolean):boolean; 
   var
     resu : boolean;
   begin
@@ -32,16 +32,16 @@ function is_valid(const input_string:string; is_start:boolean):boolean;
                                       (input_string[3]<'A') or
                                       (input_string[4]>'s') or
                                       (input_string[4]<'a') then resu := false;
-    is_valid := resu;
+    is_in_range := resu;
   end;                  
 
 function input_analyser(const input_string:string):input_status;
   begin
     if length(input_string) = 0 then 
       input_analyser := empty
-    else if (length(input_string) = 4) and is_valid(input_string, false) then
+    else if (length(input_string) = 4) and is_in_range(input_string, false) then
       input_analyser := good
-    else if (length(input_string) = 2) and is_valid(input_string, true) then
+    else if (length(input_string) = 2) and is_in_range(input_string, true) then
       input_analyser := start
     else 
       input_analyser := bad;
@@ -171,6 +171,8 @@ procedure vertical_indices (var i, j:char; var finished, new_line:boolean);
   end;
 
 procedure nw_diagonal_indices (var i, j:char; var finished, new_line:boolean);
+  // please observe that elements on a given diagonal have same sum for example 
+  // the sum of distance from a to C and a are same as sum of distance to B and b to a
   begin
     if (i = 'z') and (j = 'z') then begin
       new_line := true;
