@@ -75,8 +75,6 @@ procedure show_table(game_table:table; now_playing:player; game_state:state);
       writeln('gracz X') 
     else if game_state = playing then
       writeln('gracz ', now_playing)
-    else if game_state = draw then
-      writeln('gracz ', now_playing)
     else if game_state = x_wins then
       writeln('wygral X')
     else if game_state = o_wins then
@@ -320,13 +318,13 @@ function is_draw(game_table:table):state;
     while (i <= N) and (resu = draw) do begin
       j := 'A';
       while (j <= M) and (resu = draw) do begin
-        if game_table[i,j] = ',' then 
+        if game_table[i,j] = '.' then 
           resu := playing;
         inc(j);
       end;
       inc(i);
     end;
-    is_draw := playing;
+    is_draw := resu;
   end;
 
 begin 
@@ -350,7 +348,7 @@ begin
           game_state := is_draw(game_table);
       end
     end;
-      if not(game_state = just_end) then
-        show_table(game_table, now_playing, game_state);
+    if not(game_state = just_end) then
+      show_table(game_table, now_playing, game_state);
   end; 
 end.
