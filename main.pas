@@ -258,7 +258,7 @@ procedure get_next_index (iter_func_num:direction;
                           var i, j:char; var finished, new_line:boolean);
   // enables us to as-if-pass an iterator function as a parameter
   // to get next index using given iterator function
-  // in the lieu of lambda expressions
+  // in lieu of lambda expressions
   begin
     case iter_func_num of
     nwse : nw_diagonal_indices (i, j, finished, new_line);
