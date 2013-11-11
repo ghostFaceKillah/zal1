@@ -1,14 +1,19 @@
 program connect6;
 
 const 
-  N = 's';
-  M = 'S';
+  N = 'a';
+  N_END = 's';
+  M = 'A';
+  M_END = 'S';
+  GET_FIRST_INDEX = '*';
+  NOTHING = '.';         // this is in the array if nothing is there
+  EVERYTHING = NOTHING;  // for Zen purposes only
 
 type
   state = (playing, x_wins, o_wins , just_started, just_end, draw);
   input_status = (good, start, bad, empty);
   direction = (nwse, nesw, horizontal, vertical, ending);
-  table = array['a'..N,'A'..M] of char;
+  table = array[N..N_END,M..M_END] of char;
   player = (X,O);
 
 var
@@ -24,14 +29,14 @@ function is_in_range(const input_string:string; is_start:boolean):boolean;
     resu : boolean;
   begin
     resu := true;
-    if (input_string[1]>'S') or
-       (input_string[1]<'A') or
-       (input_string[2]>'s') or
-       (input_string[2]<'a') then resu := false;
-    if not(is_start) and resu then if (input_string[3]>'S') or
-                                      (input_string[3]<'A') or
-                                      (input_string[4]>'s') or
-                                      (input_string[4]<'a') then resu := false;
+    if (input_string[1]>M_END) or
+       (input_string[1]<M) or
+       (input_string[2]>N_END) or
+       (input_string[2]<N) then resu := false;
+    if not(is_start) and resu then if (input_string[3]>M_END) or
+                                      (input_string[3]<M) or
+                                      (input_string[4]>N_END) or
+                                      (input_string[4]<N) then resu := false;
     is_in_range := resu;
   end;                  
 
@@ -51,9 +56,9 @@ procedure init_table(var game_table:table);
   var
     i,j : char;
   begin
-    for i := 'a' to N do
-      for j := 'A' to M do
-        game_table[i,j] := '.';
+    for i := N to N_END do
+      for j := M to M_END do
+        game_table[i,j] := NOTHING;
   end;
 
 procedure show_table(game_table:table; now_playing:player; game_state:state);
@@ -63,13 +68,13 @@ procedure show_table(game_table:table; now_playing:player; game_state:state);
   begin
     for k := 1 to 38 do write('-');
     writeln('+');
-    for i := N downto 'a' do begin 
-      write(i, game_table[i,'A']);
-      for j := 'B' to M do
+    for i := N_END downto N do begin 
+      write(i, game_table[i,M]);
+      for j := chr(ord(M)+1) to M_END do
         write(' ', game_table[i,j]);
       writeln('|')
     end;
-    for j := 'A' to M do write(' ',j);
+    for j := M to M_END do write(' ',j);
     writeln('|');
     if game_state = just_started then
       writeln('gracz X') 
@@ -99,19 +104,21 @@ procedure insert_value(i:integer; input_string:string; now_playing:player;
   
 function make_move(this_move_is:input_status; now_playing:player;
                    input_string:string; var game_table:table): boolean;
-                   // WARNING : side effects in a func
+  // WARNING : side effects in a func - we are changing game_table.
+  // make_move gets an input string in a valid format and tries to
+  // make a move based on it. returns true only if it was a valid move
   var
     resu : boolean;
   begin
     if this_move_is = start then begin
-      if  game_table[input_string[2], input_string[1]] = '.' then begin
+      if  game_table[input_string[2], input_string[1]] = NOTHING then begin
         insert_value(1, input_string, now_playing, game_table);
         resu := true;
       end else resu := false;
     end
     else begin
-      if  (game_table[input_string[2], input_string[1]] = '.') and
-          (game_table[input_string[4], input_string[3]] = '.') and
+      if  (game_table[input_string[2], input_string[1]] = NOTHING) and
+          (game_table[input_string[4], input_string[3]] = NOTHING) and
           ((input_string[4] <> input_string[2]) or
             (input_string[1] <> input_string[3])) then begin
         insert_value(1, input_string, now_playing, game_table);
@@ -123,21 +130,23 @@ function make_move(this_move_is:input_status; now_playing:player;
   end;
 
 procedure horizontal_indices (var i,j:char; var finished, new_line:boolean);
+  // this takes current indices and returns new indices pair when looking
+  // for winning 6 streak in horizontal lines
   begin
     finished := false;
-    if (i = 'z') and (j = 'z') then begin
-      i := 'a'; 
-      j := 'A';
+    if (i = GET_FIRST_INDEX) and (j = GET_FIRST_INDEX) then begin
+      i := N; 
+      j := M;
       new_line := true;
     end else begin
       inc(j);
-      if j > 'S' then begin
+      if j > M_END then begin
         inc(i);
-        if i > 's' then 
+        if i > N_END then 
           finished := true
         else begin
           new_line := true;
-          j := 'A'
+          j := M
         end;
       end
       else
@@ -146,21 +155,22 @@ procedure horizontal_indices (var i,j:char; var finished, new_line:boolean);
   end;
 
 procedure vertical_indices (var i, j:char; var finished, new_line:boolean);
+  // this iterates indices while looking for vertical winning 6 streak
   begin
     finished := false;
-    if (i = 'z') and (j = 'z') then begin
-      i := 'a'; 
-      j := 'A';
+    if (i = GET_FIRST_INDEX) and (j = GET_FIRST_INDEX) then begin
+      i := N; 
+      j := M;
       new_line := true;
     end else begin
       inc(i);
-      if i > 's' then begin
+      if i > N_END then begin
         inc(j);
-        if j > 'S' then 
+        if j > M_END then 
           finished := true
         else begin
           new_line := true;
-          i := 'a'
+          i := N
         end;
       end
       else
@@ -169,33 +179,34 @@ procedure vertical_indices (var i, j:char; var finished, new_line:boolean);
   end;
 
 procedure nw_diagonal_indices (var i, j:char; var finished, new_line:boolean);
-  // please observe that elements on a given diagonal have same sum for example 
-  // the sum of distance from a to C and a are same as sum of distance to B and b to a
+  // this iterates indices while looking for (nw->se)-diagonal winning 6 streak
+  // please observe that elements on a given diagonal line have same ord sum
+  // ex. ord('a') + ord('C') = ord('b') + ord('B')
   begin
-    if (i = 'z') and (j = 'z') then begin
+    if (i = GET_FIRST_INDEX) and (j = GET_FIRST_INDEX) then begin
       new_line := true;
       finished := false;
-      i := 'f';    
-      j := 'A';
+      i := chr(ord(N)+ 5);  // we skip some beginning lines shorter than 6
+      j := M;
     end 
     else begin
       dec(i);
       inc(j);
-      if (i < 'a') or (j > 'S') then begin
-        if (ord(i) + ord(j) + 1) > ( ord('s') + ord('P')) then
+      if (i < N) or (j > M_END) then begin
+        if (ord(i) + ord(j) + 1) > (ord(N_END) + ord(M_END)-2) then
           finished := true
         else begin
           finished := false;
           new_line := true;
-          if (ord(i) + ord(j)) >= (ord('s') + ord('A')) then begin 
+          if (ord(i) + ord(j)) >= (ord(N_END) + ord(M)) then begin 
             // we are on the upside of diagonal
-            j := chr( ord(i) + 2 - ord('a') + ord('A') );
-            i := 's';
+            j := chr( ord(i) + 2 - ord(N) + ord(M) );
+            i := N_END;
           end
           else begin 
             // we are on the downside of the diagonal
-            i := chr( ord(i) + ord(j)  + 1 - ord('A') );
-            j := 'A';
+            i := chr( ord(i) + ord(j)  + 1 - ord(M) );
+            j := M;
           end;
         end;
       end
@@ -207,31 +218,32 @@ procedure nw_diagonal_indices (var i, j:char; var finished, new_line:boolean);
   end;
 
 procedure ne_diagonal_indices (var i, j:char; var finished, new_line:boolean);
+  // elements on a given antidiagonal line have same difference of ord
   begin
-    if (i = 'z') and (j = 'z') then begin
+    if (i = GET_FIRST_INDEX) and (j = GET_FIRST_INDEX) then begin
       new_line := true;
       finished := false;
-      i := 's';    
-      j := 'A';
+      i := N_END;    
+      j := M;
     end 
     else begin
       dec(i);
       dec(j);
-      if (i < 'a') or (j < 'A') then begin
-        if (ord(i) - ord(j) - 1) <= (ord('a') - ord('S') + 2) then
+      if (i < N) or (j < M) then begin
+        if (ord(i) - ord(j) - 1) <= (ord(N) - ord(M_END) + 2) then
           finished := true
         else begin
           finished := false;
           new_line := true;
-          if (ord(i) - ord(j)) > (ord('a') - ord('A')) then begin 
-            // upside of the diagonal
-            j := chr(ord('A') +  ord('s') - ord(i) )  ;
-            i := 's';
+          if (ord(i) - ord(j)) > (ord(N) - ord(M)) then begin 
+            // upside of the antidiagonal
+            j := chr(ord(M) +  ord(N_END) - ord(i) )  ;
+            i := N_END;
           end
           else begin 
-            i := chr( ord('s') - 2 -  ord(j) + ord('A'));
-            j := 'S';
-            // we are on the downside of the diagonal
+            i := chr( ord(N_END) - 2 -  ord(j) + ord(M));
+            j := M_END;
+            // we are on the downside of the antidiagonal
           end;
         end;
       end
@@ -244,6 +256,9 @@ procedure ne_diagonal_indices (var i, j:char; var finished, new_line:boolean);
 
 procedure get_next_index (iter_func_num:direction;
                           var i, j:char; var finished, new_line:boolean);
+  // enables us to as-if-pass an iterator function as a parameter
+  // to get next index using given iterator function
+  // in the lieu of lambda expressions
   begin
     case iter_func_num of
     nwse : nw_diagonal_indices (i, j, finished, new_line);
@@ -260,10 +275,12 @@ function next(current:direction) : direction;
       nesw : next := vertical;
       vertical : next := horizontal;
       horizontal : next := ending;
+      ending : next := ending;
     end;
   end;
 
 function did_someone_win(game_table:table):state;
+  // we look for winning 6 streak in all 4 directions  \ / - | 
   // naiive approach as 4 directions * 19 rows * 19 cols =~ 1600 only lookups
   var
     i,j : char;
@@ -279,12 +296,12 @@ function did_someone_win(game_table:table):state;
     iter_func := nwse;
     new_line := true;
     while (iter_func <> ending) and (resu_state = playing) do begin
-      i := 'z';
-      j := 'z';  // this means we want to get beginning indices
+      i := GET_FIRST_INDEX;
+      j := GET_FIRST_INDEX; 
       get_next_index(iter_func, i, j, finished, new_line);
       while (resu_state = playing) and not(finished) do begin
         if new_line then begin
-          just_looked_at := '.'; 
+          just_looked_at := NOTHING; 
           counter := 1;
         end;
         if game_table[i,j] = just_looked_at then begin
@@ -302,8 +319,9 @@ function did_someone_win(game_table:table):state;
       end;
       iter_func := next(iter_func);
       // standard inc is ok with normal compilation and 
-      // throws exceptions when using fpc -Ciort -vw -gl
-      // and _this_makes_me_a_sad_panda
+      // throws exceptions due to possible range error
+      // when using fpc -Ciort -vw -gl
+      // and _this_makes_me_a_sad_panda_
     end;
     did_someone_win := resu_state;
   end;
@@ -314,11 +332,11 @@ function is_draw(game_table:table):state;
     resu:state;
   begin
     resu := draw;
-    i := 'a';
-    while (i <= N) and (resu = draw) do begin
-      j := 'A';
-      while (j <= M) and (resu = draw) do begin
-        if game_table[i,j] = '.' then 
+    i := N;
+    while (i <= N_END) and (resu = draw) do begin
+      j := M;
+      while (j <= M_END) and (resu = draw) do begin
+        if game_table[i,j] = NOTHING then 
           resu := playing;
         inc(j);
       end;
